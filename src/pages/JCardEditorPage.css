@@ -1,0 +1,118 @@
+/* JCard Editor Page Styles */
+
+.jcard-editor-page {
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #2c2c2c;
+}
+
+/* Header */
+.jcard-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: #252525;
+  border-bottom: 1px solid #333;
+  flex-shrink: 0;
+}
+
+.jcard-editor-header .back-btn,
+.jcard-editor-header .next-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: 1px solid #444;
+  color: #ccc;
+  padding: 10px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.jcard-editor-header .back-btn:hover,
+.jcard-editor-header .next-btn:hover {
+  background: #333;
+  border-color: #555;
+  color: #fff;
+}
+
+.jcard-editor-header .next-btn {
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+  border: none;
+  color: #000;
+  font-weight: 600;
+}
+
+.jcard-editor-header .next-btn:hover {
+  box-shadow: 0 4px 16px rgba(255, 107, 53, 0.3);
+}
+
+.jcard-editor-header .header-title {
+  text-align: center;
+}
+
+.jcard-editor-header .step-indicator {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: #ff6b35;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.jcard-editor-header .header-title h1 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+  color: #fff;
+}
+
+/* Editor Content */
+.jcard-editor-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Preview panel 중앙 정렬 */
+.jcard-editor-content .preview-panel {
+  flex: 1;
+  background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+  position: relative;
+  overflow: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 80px 40px 40px;
+}
+
+.jcard-editor-content .preview-panel .preview-content {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* 반응형 */
+@media (max-width: 900px) {
+  .jcard-editor-content {
+    flex-direction: column;
+  }
+  
+  .jcard-editor-content .editor-panel {
+    width: 100%;
+    max-height: 50vh;
+    border-right: none;
+    border-bottom: 1px solid #333;
+  }
+  
+  .jcard-editor-content .preview-panel {
+    min-height: 50vh;
+  }
+}

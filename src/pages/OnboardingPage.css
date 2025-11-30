@@ -1,0 +1,481 @@
+/* Onboarding Page Styles */
+
+.onboarding-page {
+  min-height: 100vh;
+  width: 100%;
+  background: linear-gradient(165deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Skip button */
+.skip-btn {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  color: #666;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.skip-btn:hover {
+  color: #aaa;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Progress dots */
+.progress-dots {
+  position: absolute;
+  top: 32px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 12px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #333;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.dot:hover {
+  background: #555;
+}
+
+.dot.active {
+  background: #ff6b35;
+  transform: scale(1.2);
+}
+
+.dot.completed {
+  background: #ff6b35;
+  opacity: 0.5;
+}
+
+/* Content */
+.onboarding-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 48px;
+  max-width: 600px;
+  text-align: center;
+}
+
+/* Visual container */
+.visual-container {
+  width: 100%;
+  min-height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.visual-label {
+  font-size: 12px;
+  color: #666;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+/* Cassette Visual */
+.cassette-visual .cassette-body {
+  width: 280px;
+  height: 180px;
+  background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
+  border-radius: 8px;
+  position: relative;
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.cassette-top {
+  position: absolute;
+  top: 8px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 12px;
+}
+
+.screw {
+  width: 8px;
+  height: 8px;
+  background: #444;
+  border-radius: 50%;
+  border: 1px solid #333;
+}
+
+.cassette-window {
+  position: absolute;
+  top: 28px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 180px;
+  height: 60px;
+  background: linear-gradient(180deg, #0d0d0d 0%, #1a1a1a 100%);
+  border-radius: 4px;
+  border: 2px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 8px 16px;
+}
+
+.reel {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, #444, #222, #444, #222, #444);
+  border: 2px solid #555;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: spin 4s linear infinite;
+}
+
+.reel-center {
+  width: 12px;
+  height: 12px;
+  background: #222;
+  border-radius: 50%;
+  border: 2px solid #444;
+}
+
+.tape-guide {
+  width: 30px;
+  height: 6px;
+  background: linear-gradient(90deg, #8b4513, #654321, #8b4513);
+  border-radius: 2px;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.cassette-label-area {
+  position: absolute;
+  bottom: 45px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 50px;
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #000;
+  letter-spacing: 2px;
+}
+
+.cassette-bottom {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 80px;
+}
+
+.hole {
+  width: 10px;
+  height: 10px;
+  background: #0a0a0a;
+  border-radius: 50%;
+  border: 2px solid #333;
+}
+
+/* JCard Visual - Image Placeholder */
+.jcard-image-placeholder {
+  width: 100%;
+  max-width: 600px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.jcard-image-placeholder img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Label Visual - Image Placeholder */
+.label-image-placeholder {
+  width: 100%;
+  max-width: 600px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.label-image-placeholder img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Label Visual */
+.label-visual .label-demo {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.label-sticker {
+  width: 200px;
+  height: 100px;
+  background: #fff;
+  border-radius: 4px;
+  position: relative;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.label-window {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100px;
+  height: 36px;
+  background: #808080;
+  border-radius: 4px;
+}
+
+.label-text {
+  position: absolute;
+  font-size: 10px;
+  font-weight: 700;
+  color: #333;
+}
+
+.label-text.side-a {
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.label-text.side-b {
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.label-arrow {
+  font-size: 24px;
+  color: #ff6b35;
+}
+
+.cassette-mini {
+  width: 80px;
+  height: 50px;
+  background: #2a2a2a;
+  border-radius: 4px;
+  position: relative;
+}
+
+.mini-window {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px;
+  height: 18px;
+  background: #111;
+  border-radius: 2px;
+}
+
+.mini-label {
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 16px;
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+  border-radius: 2px;
+}
+
+/* Complete Visual */
+.complete-visual .flow-diagram {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.flow-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.flow-icon {
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 107, 53, 0.1);
+  border: 2px solid rgba(255, 107, 53, 0.3);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.flow-step span {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.flow-arrow {
+  font-size: 20px;
+  color: #444;
+}
+
+/* Text content */
+.text-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.step-subtitle {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  color: #ff6b35;
+}
+
+.step-title {
+  font-family: 'Space Mono', monospace;
+  font-size: 36px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.step-description {
+  font-size: 16px;
+  line-height: 1.7;
+  color: #888;
+  max-width: 480px;
+  margin: 0;
+}
+
+/* Navigation */
+.onboarding-nav {
+  position: absolute;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 16px;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 28px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nav-btn.prev {
+  background: transparent;
+  border: 1px solid #444;
+  color: #888;
+}
+
+.nav-btn.prev:hover:not(:disabled) {
+  border-color: #666;
+  color: #ccc;
+}
+
+.nav-btn.prev:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.nav-btn.next {
+  background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+  border: none;
+  color: #000;
+}
+
+.nav-btn.next:hover {
+  box-shadow: 0 4px 20px rgba(255, 107, 53, 0.4);
+  transform: translateY(-1px);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .onboarding-page {
+    padding: 24px;
+  }
+
+  .onboarding-content {
+    gap: 32px;
+  }
+
+  .step-title {
+    font-size: 28px;
+  }
+
+  .step-description {
+    font-size: 14px;
+  }
+
+  .jcard-visual .jcard-exploded {
+    transform: scale(0.8);
+  }
+
+  .flow-diagram {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .nav-btn {
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+}

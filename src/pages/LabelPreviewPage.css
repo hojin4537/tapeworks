@@ -1,0 +1,41 @@
+/* Label Preview Page Styles */
+/* Extends base styles from JCardPreviewPage.css */
+
+.label-preview-page .label-preview-wrapper {
+  background: #f5f5f5;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.label-preview-page .side-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.label-preview-page .side-tab {
+  padding: 10px 24px;
+  background: #333;
+  border: none;
+  border-radius: 6px;
+  color: #888;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.label-preview-page .side-tab:hover {
+  background: #444;
+  color: #ccc;
+}
+
+.label-preview-page .side-tab.active {
+  background: #ff6b35;
+  color: #000;
+}
+
+.label-preview-page .progress-line.completed {
+  background: #4CAF50;
+}
+
