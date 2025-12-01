@@ -483,7 +483,7 @@ const EditorPanel: React.FC<EditorPanelProps> = ({
 
             {/* 정렬 */}
             <div className="control-row">
-              <label>정렬</label>
+              <label></label>
               <div className="align-buttons">
                 <button
                   className={selectedText.textAlign === 'left' ? 'active' : ''}
@@ -550,31 +550,34 @@ const EditorPanel: React.FC<EditorPanelProps> = ({
 
             {/* 위치 초기화 */}
             <div className="control-row">
-              <label>위치</label>
+              <label>정렬</label>
               <div className="position-buttons">
                 <button
                   className="position-btn"
                   onClick={() => updateTextElement(selectedText.id, { x: 0 })}
-                  title="가로 중앙"
+                  title="가로 중앙 정렬"
                 >
-                  ↔
+                  가로
                 </button>
                 <button
                   className="position-btn"
                   onClick={() => updateTextElement(selectedText.id, { y: 0 })}
-                  title="세로 중앙"
+                  title="세로 중앙 정렬"
                 >
-                  ↕
+                  세로
                 </button>
                 <button
                   className="position-btn"
                   onClick={() => updateTextElement(selectedText.id, { x: 0, y: 0 })}
-                  title="중앙 정렬"
+                  title="정중앙 정렬"
                 >
-                  <Move size={14} />
+                  중앙
                 </button>
               </div>
             </div>
+            <p className="control-description">
+              텍스트 박스의 위치를 가로, 세로, 정중앙으로 정렬합니다.
+            </p>
           </div>
         )}
       </div>
@@ -798,6 +801,14 @@ const EditorPanel: React.FC<EditorPanelProps> = ({
           display: flex;
           align-items: center;
           justify-content: center;
+        }
+
+        .control-description {
+          font-size: 11px;
+          color: #666;
+          margin-top: 6px;
+          margin-left: 48px;
+          line-height: 1.4;
         }
         
         .image-controls {

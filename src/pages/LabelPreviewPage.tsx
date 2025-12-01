@@ -15,7 +15,7 @@ export default function LabelPreviewPage() {
   const labelDataA = location.state?.labelDataA as LabelData | undefined;
   const labelDataB = location.state?.labelDataB as LabelData | undefined;
   const dualSideMode = location.state?.dualSideMode as boolean | undefined;
-  
+
   const [isExporting, setIsExporting] = useState(false);
   const [previewSide, setPreviewSide] = useState<'A' | 'B'>('A');
 
@@ -38,16 +38,20 @@ export default function LabelPreviewPage() {
 
   // 프리뷰용 스케일
   const previewScale = LABEL_PREVIEW_SCALE * 11.811;
+  const bleedWidth = LABEL_DIMENSIONS.bleed.width * previewScale;
+  const bleedHeight = LABEL_DIMENSIONS.bleed.height * previewScale;
   const cutWidth = LABEL_DIMENSIONS.cut.width * previewScale;
   const cutHeight = LABEL_DIMENSIONS.cut.height * previewScale;
   const windowWidth = LABEL_DIMENSIONS.window.width * previewScale;
   const windowHeight = LABEL_DIMENSIONS.window.height * previewScale;
+  const windowX = (bleedWidth - windowWidth) / 2;
+  const windowY = bleedHeight - windowHeight - (11 * previewScale);
   const windowRadius = LABEL_DIMENSIONS.window.cornerRadius * previewScale;
 
   const handleExport = async (format: 'png' | 'jpeg') => {
     setIsExporting(true);
     try {
-      const fileName = dualSideMode 
+      const fileName = dualSideMode
         ? `label-side-${previewSide.toLowerCase()}.${format === 'jpeg' ? 'jpg' : 'png'}`
         : `label-design.${format === 'jpeg' ? 'jpg' : 'png'}`;
       await exportToImage('label-final-preview', format, fileName);
@@ -57,14 +61,14 @@ export default function LabelPreviewPage() {
   };
 
   const handleContinue = () => {
-    navigate('/create/mockup', { 
-      state: { jCardData, labelDataA, labelDataB, dualSideMode } 
+    navigate('/create/mockup', {
+      state: { jCardData, labelDataA, labelDataB, dualSideMode }
     });
   };
 
   const handleEdit = () => {
-    navigate('/create/label', { 
-      state: { jCardData, labelDataA, labelDataB, dualSideMode } 
+    navigate('/create/label', {
+      state: { jCardData, labelDataA, labelDataB, dualSideMode }
     });
   };
 
@@ -72,132 +76,159 @@ export default function LabelPreviewPage() {
   const renderLabelPreview = (data: LabelData) => {
     // SVG mask ID를 고유하게 생성
     const maskId = `label-mask-${Math.random().toString(36).substr(2, 9)}`;
-    
+
     return (
-    <div 
-      style={{
-        width: cutWidth,
-        height: cutHeight,
-        backgroundColor: data.backgroundColor,
-        position: 'relative',
-        overflow: 'hidden',
-        borderRadius: '4px',
-      }}
-    >
-      {/* SVG Mask for window cutout */}
-      <svg width="0" height="0" style={{ position: 'absolute' }}>
-        <defs>
-          <mask id={maskId}>
-            <rect width="100%" height="100%" fill="white" />
-            <rect 
-              x={cutWidth / 2 - windowWidth / 2}
-              y={cutHeight / 2 - windowHeight / 2}
-              width={windowWidth}
-              height={windowHeight}
-              rx={windowRadius}
-              fill="black"
-            />
-          </mask>
-        </defs>
-      </svg>
-      {/* Background Image */}
-      {data.backgroundImage && (() => {
-        const baseScale = data.baseImgSettings?.baseScale ?? 1;
-        const effectiveScale = baseScale * (data.baseImgSettings?.scale ?? 1);
-        const displayWidth = data.baseImgSettings?.originalWidth 
-          ? data.baseImgSettings.originalWidth * effectiveScale 
-          : undefined;
-        const displayHeight = data.baseImgSettings?.originalHeight 
-          ? data.baseImgSettings.originalHeight * effectiveScale 
-          : undefined;
-        return (
-          <img
-            src={data.backgroundImage}
-            alt="Background"
-            style={{
-              width: displayWidth ? `${displayWidth}px` : 'auto',
-              height: displayHeight ? `${displayHeight}px` : 'auto',
-              position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: `translate(calc(-50% + ${data.baseImgSettings?.x ?? 0}px), calc(-50% + ${data.baseImgSettings?.y ?? 0}px))`,
-            }}
-          />
-        );
-      })()}
-
-      {/* Additional Images */}
-      {(data.images || []).map((img) => {
-        const displayWidth = img.originalWidth ? img.originalWidth * img.scale : undefined;
-        const displayHeight = img.originalHeight ? img.originalHeight * img.scale : undefined;
-        return (
-          <img
-            key={img.id}
-            src={img.src}
-            alt=""
-            style={{
-              position: 'absolute',
-              left: '50%',
-              top: '50%',
-              transform: `translate(calc(-50% + ${img.x}px), calc(-50% + ${img.y}px))`,
-              width: displayWidth ? `${displayWidth}px` : 'auto',
-              height: displayHeight ? `${displayHeight}px` : 'auto',
-              zIndex: 2,
-            }}
-          />
-        );
-      })}
-
-      {/* Text Elements with mask applied */}
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
-        mask: `url(#${maskId})`,
-        WebkitMask: `url(#${maskId})`,
-      }}>
-        {(data.textElements || []).map((el) => (
-          <div
-            key={el.id}
-            style={{
-              position: 'absolute',
-              left: '50%',
-              top: '50%',
-              transform: `translate(calc(-50% + ${el.x}px), calc(-50% + ${el.y}px))`,
-              fontSize: el.fontSize,
-              fontFamily: el.fontFamily,
-              fontWeight: el.fontWeight || 400,
-              color: el.color,
-              width: el.width || 150,
-              textAlign: (el.textAlign as 'left' | 'center' | 'right') || 'center',
-              whiteSpace: 'pre-wrap',
-              letterSpacing: el.letterSpacing ? `${el.letterSpacing}px` : undefined,
-              lineHeight: el.lineHeight || 1.4,
-            }}
-          >
-            {el.text}
-          </div>
-        ))}
-      </div>
-
-      {/* Window (visual only) */}
-      <div 
+      <div
         style={{
-          width: windowWidth,
-          height: windowHeight,
-          borderRadius: windowRadius,
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          background: '#808080',
-          zIndex: 100,
-          pointerEvents: 'none',
+          width: bleedWidth,
+          height: bleedHeight,
+          position: 'relative',
+          overflow: 'hidden',
+          borderRadius: '4px',
+          backgroundColor: '#fff', // Default background
         }}
-      />
-    </div>
+      >
+        {/* SVG Mask for window cutout */}
+        <svg width="0" height="0" style={{ position: 'absolute' }}>
+          <defs>
+            <mask id={maskId}>
+              <path
+                d={`
+                  M 0 0 H ${bleedWidth} V ${bleedHeight} H 0 Z
+                  M ${windowX + windowRadius} ${windowY}
+                  L ${windowX + windowWidth - windowRadius} ${windowY}
+                  A ${windowRadius} ${windowRadius} 0 0 1 ${windowX + windowWidth} ${windowY + windowRadius}
+                  L ${windowX + windowWidth} ${windowY + windowHeight - windowRadius}
+                  A ${windowRadius} ${windowRadius} 0 0 1 ${windowX + windowWidth - windowRadius} ${windowY + windowHeight}
+                  L ${windowX + windowRadius} ${windowY + windowHeight}
+                  A ${windowRadius} ${windowRadius} 0 0 1 ${windowX} ${windowY + windowHeight - windowRadius}
+                  L ${windowX} ${windowY + windowRadius}
+                  A ${windowRadius} ${windowRadius} 0 0 1 ${windowX + windowRadius} ${windowY}
+                  Z
+                `}
+                fill="white"
+                fillRule="evenodd"
+              />
+            </mask>
+          </defs>
+        </svg>
+
+        {/* Gray Window Overlay (Visible on top to ensure export works) */}
+        <div
+          style={{
+            position: 'absolute',
+            left: windowX,
+            top: windowY,
+            width: windowWidth,
+            height: windowHeight,
+            borderRadius: windowRadius,
+            backgroundColor: '#808080',
+            zIndex: 15, // Above content, below trim line
+            boxSizing: 'border-box',
+          }}
+        />
+
+        {/* Masked Content Wrapper */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: data.backgroundColor,
+          mask: `url(#${maskId})`,
+          WebkitMask: `url(#${maskId})`,
+          zIndex: 1,
+        }}>
+          {/* Background Image */}
+          {data.backgroundImage && (() => {
+            const baseScale = data.baseImgSettings?.baseScale ?? 1;
+            const effectiveScale = baseScale * (data.baseImgSettings?.scale ?? 1);
+            const displayWidth = data.baseImgSettings?.originalWidth
+              ? data.baseImgSettings.originalWidth * effectiveScale
+              : undefined;
+            const displayHeight = data.baseImgSettings?.originalHeight
+              ? data.baseImgSettings.originalHeight * effectiveScale
+              : undefined;
+            return (
+              <img
+                src={data.backgroundImage}
+                alt="Background"
+                style={{
+                  width: displayWidth ? `${displayWidth}px` : 'auto',
+                  height: displayHeight ? `${displayHeight}px` : 'auto',
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: `translate(calc(-50% + ${data.baseImgSettings?.x ?? 0}px), calc(-50% + ${data.baseImgSettings?.y ?? 0}px))`,
+                }}
+              />
+            );
+          })()}
+
+          {/* Additional Images */}
+          {(data.images || []).map((img) => {
+            const displayWidth = img.originalWidth ? img.originalWidth * img.scale : undefined;
+            const displayHeight = img.originalHeight ? img.originalHeight * img.scale : undefined;
+            return (
+              <img
+                key={img.id}
+                src={img.src}
+                alt=""
+                style={{
+                  position: 'absolute',
+                  left: '50%',
+                  top: '50%',
+                  transform: `translate(calc(-50% + ${img.x}px), calc(-50% + ${img.y}px))`,
+                  width: displayWidth ? `${displayWidth}px` : 'auto',
+                  height: displayHeight ? `${displayHeight}px` : 'auto',
+                  zIndex: 2,
+                }}
+              />
+            );
+          })}
+
+          {/* Text Elements */}
+          {(data.textElements || []).map((el) => (
+            <div
+              key={el.id}
+              style={{
+                position: 'absolute',
+                left: '50%',
+                top: '50%',
+                transform: `translate(calc(-50% + ${el.x}px), calc(-50% + ${el.y}px))`,
+                fontSize: el.fontSize,
+                fontFamily: el.fontFamily,
+                fontWeight: el.fontWeight || 400,
+                color: el.color,
+                width: el.width || 150,
+                textAlign: (el.textAlign as 'left' | 'center' | 'right') || 'center',
+                whiteSpace: 'pre-wrap',
+                letterSpacing: el.letterSpacing ? `${el.letterSpacing}px` : undefined,
+                lineHeight: el.lineHeight || 1.4,
+                zIndex: 10,
+              }}
+            >
+              {el.text}
+            </div>
+          ))}
+        </div>
+
+        {/* Trim Line (Cut Line) */}
+        <div
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: cutWidth,
+            height: cutHeight,
+            border: '1px solid #000',
+            zIndex: 20,
+            pointerEvents: 'none',
+          }}
+        />
+      </div>
     );
   };
 
@@ -213,15 +244,12 @@ export default function LabelPreviewPage() {
           <span className="step-indicator">라벨 완성</span>
           <h1>디자인 확인</h1>
         </div>
-        <button className="next-btn" onClick={handleContinue}>
-          <span>목업 보기</span>
-          <ArrowRight size={20} />
-        </button>
+        <div style={{ width: 100 }}></div>
       </header>
 
       <div className="preview-content">
         {/* Preview Section */}
-        <motion.div 
+        <motion.div
           className="preview-main"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -250,7 +278,7 @@ export default function LabelPreviewPage() {
                 </button>
               </div>
             )}
-            
+
             <div className="label-preview-wrapper" id="label-final-preview">
               {renderLabelPreview(currentLabelData)}
             </div>
@@ -281,7 +309,7 @@ export default function LabelPreviewPage() {
             <h3>다음 단계</h3>
             <p>라벨 디자인이 완료되었어요! 이제 실제 카세트가 어떻게 완성될지 목업으로 확인해볼까요?</p>
             <button className="primary-action" onClick={handleContinue}>
-              <span>목업 확인하기</span>
+              <span>최종 확인하기</span>
               <ArrowRight size={18} />
             </button>
           </div>
@@ -299,7 +327,7 @@ export default function LabelPreviewPage() {
             <h3>이미지 저장</h3>
             <p>현재 디자인을 이미지로 저장할 수 있어요.</p>
             <div className="export-buttons">
-              <button 
+              <button
                 className="export-btn"
                 onClick={() => handleExport('png')}
                 disabled={isExporting}
@@ -307,7 +335,7 @@ export default function LabelPreviewPage() {
                 <Download size={16} />
                 <span>PNG</span>
               </button>
-              <button 
+              <button
                 className="export-btn"
                 onClick={() => handleExport('jpeg')}
                 disabled={isExporting}

@@ -66,7 +66,7 @@ export default function LandingPage() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
           >
-            직접 디자인한 카세트 테이프를 실물로 받아보세요.
+            카세트 테이프를 직접 디자인해 보세요.
             <br />
             J카드부터 라벨까지, 모든 것을 커스텀할 수 있어요.
           </motion.p>

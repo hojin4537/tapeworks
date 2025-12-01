@@ -1,14 +1,15 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ArrowRight, Check, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Check, ShoppingCart, Download } from 'lucide-react';
 import { useState } from 'react';
+import html2canvas from 'html2canvas';
 import type { JCardData } from '../types';
 import type { LabelData } from '../types/label';
 import { LABEL_DIMENSIONS, LABEL_PREVIEW_SCALE } from '../types/label';
 import JCardPreview from '../components/JCardPreview';
 import './MockupPage.css';
 
-type MockupView = 'jcard' | 'label' | 'example';
+type MockupView = 'jcard' | 'label';
 
 export default function MockupPage() {
   const navigate = useNavigate();
@@ -20,6 +21,7 @@ export default function MockupPage() {
 
   const [currentView, setCurrentView] = useState<MockupView>('jcard');
   const [labelSide, setLabelSide] = useState<'A' | 'B'>('A');
+  const [isExporting, setIsExporting] = useState(false);
 
   // 데이터가 없으면 에디터로 리다이렉트
   if (!jCardData || !labelDataA) {
@@ -37,8 +39,8 @@ export default function MockupPage() {
   }
 
   const handleOrder = () => {
-    // 래피드 결제 페이지로 이동 (임시 URL)
-    window.open('https://rapid-checkout-placeholder.com', '_blank');
+    // 래피드 결제 페이지로 이동
+    window.open('https://www.latpeed.com/products/dx_Gx', '_blank');
   };
 
   const handleBack = () => {
@@ -47,12 +49,52 @@ export default function MockupPage() {
     });
   };
 
+  const handleExport = async (format: 'png' | 'jpg') => {
+    if (isExporting) return;
+    setIsExporting(true);
+    try {
+      const elementId = currentView === 'jcard' ? 'jcard-preview-export' : 'label-preview-export';
+      const element = document.getElementById(elementId);
+
+      if (!element) {
+        throw new Error('Preview element not found');
+      }
+
+      // Wait for images to load (just in case)
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const canvas = await html2canvas(element, {
+        scale: 2, // Higher quality
+        backgroundColor: null,
+        useCORS: true,
+        logging: false,
+      });
+
+      const link = document.createElement('a');
+      const timestamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+      const filename = `cassette-${currentView}-${timestamp}.${format}`;
+
+      link.download = filename;
+      link.href = canvas.toDataURL(`image/${format === 'jpg' ? 'jpeg' : 'png'}`);
+      link.click();
+    } catch (err) {
+      console.error('Export failed:', err);
+      alert('이미지 저장에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   // 라벨 프리뷰 렌더링
   const previewScale = LABEL_PREVIEW_SCALE * 11.811;
-  const labelWidth = LABEL_DIMENSIONS.cut.width * previewScale;
-  const labelHeight = LABEL_DIMENSIONS.cut.height * previewScale;
+  const bleedWidth = LABEL_DIMENSIONS.bleed.width * previewScale;
+  const bleedHeight = LABEL_DIMENSIONS.bleed.height * previewScale;
+  const cutWidth = LABEL_DIMENSIONS.cut.width * previewScale;
+  const cutHeight = LABEL_DIMENSIONS.cut.height * previewScale;
   const windowWidth = LABEL_DIMENSIONS.window.width * previewScale;
   const windowHeight = LABEL_DIMENSIONS.window.height * previewScale;
+  const windowX = (bleedWidth - windowWidth) / 2;
+  const windowY = bleedHeight - windowHeight - (11 * previewScale);
   const windowRadius = LABEL_DIMENSIONS.window.cornerRadius * previewScale;
 
   const currentLabelData = labelSide === 'A' ? labelDataA : (labelDataB || labelDataA);
@@ -63,14 +105,15 @@ export default function MockupPage() {
 
     return (
       <div
+        id="label-preview-export"
         className="label-mockup"
         style={{
-          width: labelWidth,
-          height: labelHeight,
+          width: bleedWidth,
+          height: bleedHeight,
           backgroundColor: data.backgroundColor,
           position: 'relative',
           overflow: 'hidden',
-          borderRadius: '8px',
+          borderRadius: '4px', // Changed to 4px to match preview
           boxShadow: '0 10px 40px rgba(0,0,0,0.4)',
         }}
       >
@@ -78,76 +121,103 @@ export default function MockupPage() {
         <svg width="0" height="0" style={{ position: 'absolute' }}>
           <defs>
             <mask id={maskId}>
-              <rect width="100%" height="100%" fill="white" />
-              <rect
-                x={labelWidth / 2 - windowWidth / 2}
-                y={labelHeight / 2 - windowHeight / 2}
-                width={windowWidth}
-                height={windowHeight}
-                rx={windowRadius}
-                fill="black"
+              <path
+                d={`
+                  M 0 0 H ${bleedWidth} V ${bleedHeight} H 0 Z
+                  M ${windowX + windowRadius} ${windowY}
+                  L ${windowX + windowWidth - windowRadius} ${windowY}
+                  A ${windowRadius} ${windowRadius} 0 0 1 ${windowX + windowWidth} ${windowY + windowRadius}
+                  L ${windowX + windowWidth} ${windowY + windowHeight - windowRadius}
+                  A ${windowRadius} ${windowRadius} 0 0 1 ${windowX + windowWidth - windowRadius} ${windowY + windowHeight}
+                  L ${windowX + windowRadius} ${windowY + windowHeight}
+                  A ${windowRadius} ${windowRadius} 0 0 1 ${windowX} ${windowY + windowHeight - windowRadius}
+                  L ${windowX} ${windowY + windowRadius}
+                  A ${windowRadius} ${windowRadius} 0 0 1 ${windowX + windowRadius} ${windowY}
+                  Z
+                `}
+                fill="white"
+                fillRule="evenodd"
               />
             </mask>
           </defs>
         </svg>
-        {/* Background Image */}
-        {data.backgroundImage && (() => {
-          const baseScale = data.baseImgSettings?.baseScale ?? 1;
-          const effectiveScale = baseScale * (data.baseImgSettings?.scale ?? 1);
-          const displayWidth = data.baseImgSettings?.originalWidth
-            ? data.baseImgSettings.originalWidth * effectiveScale
-            : undefined;
-          const displayHeight = data.baseImgSettings?.originalHeight
-            ? data.baseImgSettings.originalHeight * effectiveScale
-            : undefined;
-          return (
-            <img
-              src={data.backgroundImage}
-              alt=""
-              style={{
-                width: displayWidth ? `${displayWidth}px` : 'auto',
-                height: displayHeight ? `${displayHeight}px` : 'auto',
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                transform: `translate(calc(-50% + ${data.baseImgSettings?.x ?? 0}px), calc(-50% + ${data.baseImgSettings?.y ?? 0}px))`,
-              }}
-            />
-          );
-        })()}
 
-        {/* Additional Images */}
-        {(data.images || []).map((img) => {
-          const displayWidth = img.originalWidth ? img.originalWidth * img.scale : undefined;
-          const displayHeight = img.originalHeight ? img.originalHeight * img.scale : undefined;
-          return (
-            <img
-              key={img.id}
-              src={img.src}
-              alt=""
-              style={{
-                position: 'absolute',
-                left: '50%',
-                top: '50%',
-                transform: `translate(calc(-50% + ${img.x}px), calc(-50% + ${img.y}px))`,
-                width: displayWidth ? `${displayWidth}px` : 'auto',
-                height: displayHeight ? `${displayHeight}px` : 'auto',
-                zIndex: 2,
-              }}
-            />
-          );
-        })}
+        {/* Gray Window Overlay (Visible on top to ensure export works) */}
+        <div
+          style={{
+            position: 'absolute',
+            left: windowX,
+            top: windowY,
+            width: windowWidth,
+            height: windowHeight,
+            borderRadius: windowRadius,
+            backgroundColor: '#808080',
+            zIndex: 15, // Above content, below trim line
+            boxSizing: 'border-box',
+          }}
+        />
 
-        {/* Text Elements with mask applied */}
+        {/* Masked Content Wrapper */}
         <div style={{
           position: 'absolute',
           top: 0,
           left: 0,
           width: '100%',
           height: '100%',
+          backgroundColor: data.backgroundColor,
           mask: `url(#${maskId})`,
           WebkitMask: `url(#${maskId})`,
+          zIndex: 1,
         }}>
+          {/* Background Image */}
+          {data.backgroundImage && (() => {
+            const baseScale = data.baseImgSettings?.baseScale ?? 1;
+            const effectiveScale = baseScale * (data.baseImgSettings?.scale ?? 1);
+            const displayWidth = data.baseImgSettings?.originalWidth
+              ? data.baseImgSettings.originalWidth * effectiveScale
+              : undefined;
+            const displayHeight = data.baseImgSettings?.originalHeight
+              ? data.baseImgSettings.originalHeight * effectiveScale
+              : undefined;
+            return (
+              <img
+                src={data.backgroundImage}
+                alt=""
+                style={{
+                  width: displayWidth ? `${displayWidth}px` : 'auto',
+                  height: displayHeight ? `${displayHeight}px` : 'auto',
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: `translate(calc(-50% + ${data.baseImgSettings?.x ?? 0}px), calc(-50% + ${data.baseImgSettings?.y ?? 0}px))`,
+                }}
+              />
+            );
+          })()}
+
+          {/* Additional Images */}
+          {(data.images || []).map((img) => {
+            const displayWidth = img.originalWidth ? img.originalWidth * img.scale : undefined;
+            const displayHeight = img.originalHeight ? img.originalHeight * img.scale : undefined;
+            return (
+              <img
+                key={img.id}
+                src={img.src}
+                alt=""
+                style={{
+                  position: 'absolute',
+                  left: '50%',
+                  top: '50%',
+                  transform: `translate(calc(-50% + ${img.x}px), calc(-50% + ${img.y}px))`,
+                  width: displayWidth ? `${displayWidth}px` : 'auto',
+                  height: displayHeight ? `${displayHeight}px` : 'auto',
+                  zIndex: 2,
+                }}
+              />
+            );
+          })}
+
+          {/* Text Elements */}
           {(data.textElements || []).map((el) => (
             <div
               key={el.id}
@@ -165,6 +235,7 @@ export default function MockupPage() {
                 whiteSpace: 'pre-wrap',
                 letterSpacing: el.letterSpacing ? `${el.letterSpacing}px` : undefined,
                 lineHeight: el.lineHeight || 1.4,
+                zIndex: 10,
               }}
             >
               {el.text}
@@ -172,19 +243,17 @@ export default function MockupPage() {
           ))}
         </div>
 
-        {/* Window (visual only) */}
+        {/* Trim Line (Cut Line) */}
         <div
           style={{
-            width: windowWidth,
-            height: windowHeight,
-            borderRadius: windowRadius,
             position: 'absolute',
-            top: '50%',
             left: '50%',
+            top: '50%',
             transform: 'translate(-50%, -50%)',
-            background: '#808080',
-            zIndex: 100,
-            boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.3)',
+            width: cutWidth,
+            height: cutHeight,
+            border: '1px solid #000',
+            zIndex: 20,
             pointerEvents: 'none',
           }}
         />
@@ -201,13 +270,35 @@ export default function MockupPage() {
           <span>라벨 수정</span>
         </button>
         <div className="header-title">
-          <span className="step-indicator">목업 미리보기</span>
+          <span className="step-indicator">미리보기</span>
           <h1>완성 예상 이미지</h1>
         </div>
-        <button className="next-btn" onClick={handleOrder}>
-          <span>주문하기</span>
-          <ArrowRight size={20} />
-        </button>
+        <div className="header-actions" style={{ display: 'flex', gap: '8px' }}>
+          <button
+            className="back-btn"
+            onClick={() => handleExport('jpg')}
+            disabled={isExporting}
+            style={{ padding: '10px 12px' }}
+            title="JPG로 저장"
+          >
+            <Download size={18} />
+            <span>JPG</span>
+          </button>
+          <button
+            className="back-btn"
+            onClick={() => handleExport('png')}
+            disabled={isExporting}
+            style={{ padding: '10px 12px' }}
+            title="PNG로 저장"
+          >
+            <Download size={18} />
+            <span>PNG</span>
+          </button>
+          <button className="next-btn" onClick={handleOrder}>
+            <span>주문하기</span>
+            <ArrowRight size={20} />
+          </button>
+        </div>
       </header>
 
       <div className="mockup-content">
@@ -227,12 +318,6 @@ export default function MockupPage() {
             >
               라벨
             </button>
-            <button
-              className={`mockup-tab ${currentView === 'example' ? 'active' : ''}`}
-              onClick={() => setCurrentView('example')}
-            >
-              예시 이미지
-            </button>
           </div>
 
           {/* Mockup Display */}
@@ -249,7 +334,7 @@ export default function MockupPage() {
                 >
                   <div className="mockup-label-tag">J카드 (케이스 커버)</div>
                   <div className="jcard-mockup-wrapper">
-                    <JCardPreview data={jCardData} showGuides={false} />
+                    <JCardPreview data={jCardData} showGuides={false} id="jcard-preview-export" />
                   </div>
                   <p className="mockup-description">
                     카세트 케이스 안에 들어가는 종이 커버입니다.
@@ -296,44 +381,7 @@ export default function MockupPage() {
                 </motion.div>
               )}
 
-              {currentView === 'example' && (
-                <motion.div
-                  key="example"
-                  className="mockup-item"
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <div className="mockup-label-tag">제작 예시</div>
 
-                  <div className="example-images-container">
-                    {/* Design Image */}
-                    <div className="example-image-box">
-                      <h4>디자인 시안</h4>
-                      <div className="image-display-area">
-                        <img
-                          src="https://placehold.co/400x400/252525/ffffff?text=Design+Example"
-                          alt="Design Example"
-                        />
-                      </div>
-                      <p className="upload-desc">고객님이 디자인하신 시안입니다.</p>
-                    </div>
-
-                    {/* Real Image */}
-                    <div className="example-image-box">
-                      <h4>실제 제작물</h4>
-                      <div className="image-display-area">
-                        <img
-                          src="https://placehold.co/400x400/1a1a1a/ffffff?text=Real+Product"
-                          alt="Real Product Example"
-                        />
-                      </div>
-                      <p className="upload-desc">실제 제작되어 배송되는 제품의 예시입니다.</p>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
             </AnimatePresence>
           </div>
 

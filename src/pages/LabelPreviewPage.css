@@ -2,10 +2,10 @@
 /* Extends base styles from JCardPreviewPage.css */
 
 .label-preview-page .label-preview-wrapper {
-  background: #f5f5f5;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* Removed background and padding to eliminate white border */
 }
 
 .label-preview-page .side-tabs {
@@ -38,4 +38,3 @@
 .label-preview-page .progress-line.completed {
   background: #4CAF50;
 }
-

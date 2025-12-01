@@ -377,29 +377,36 @@ const JCardPreview: React.FC<JCardPreviewProps> = ({
             backgroundColor: 'transparent',
             boxShadow: '0 0 20px rgba(0,0,0,0.5)',
             position: 'relative' as const,
+            boxSizing: 'border-box' as const,
         },
         flap: {
             width: `${2.3 * CM_TO_PX}px`,
-            height: '100%',
+            height: `${totalHeight}px`,
             backgroundColor: data.flap.backgroundColor,
             position: 'relative' as const,
             overflow: 'hidden',
             borderRight: showGuides ? '1px dashed rgba(0,0,0,0.2)' : 'none',
+            boxSizing: 'border-box' as const,
+            flexShrink: 0,
         },
         spine: {
             width: `${1.5 * CM_TO_PX}px`,
-            height: '100%',
+            height: `${totalHeight}px`,
             backgroundColor: data.spine.backgroundColor,
             position: 'relative' as const,
             overflow: 'hidden',
             borderRight: showGuides ? '1px dashed rgba(0,0,0,0.2)' : 'none',
+            boxSizing: 'border-box' as const,
+            flexShrink: 0,
         },
         cover: {
             width: `${6.6 * CM_TO_PX}px`,
-            height: '100%',
+            height: `${totalHeight}px`,
             backgroundColor: data.cover.backgroundColor,
             position: 'relative' as const,
             overflow: 'hidden',
+            boxSizing: 'border-box' as const,
+            flexShrink: 0,
         },
     };
 
@@ -413,7 +420,9 @@ const JCardPreview: React.FC<JCardPreviewProps> = ({
                 flexDirection: 'row',
                 position: 'relative',
                 fontFamily: 'Inter, system-ui, sans-serif',
-                backgroundColor: '#f5f5f5',
+                backgroundColor: 'transparent',
+                boxSizing: 'border-box',
+                alignItems: 'flex-start',
             }}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}

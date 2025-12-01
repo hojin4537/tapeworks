@@ -10,12 +10,12 @@ import './JCardEditorPage.css';
 // 기존 데이터를 새 구조로 마이그레이션
 const migrateOldData = (oldData: any): JCardData => {
   // 이미 새 구조인 경우 그대로 반환
-  if (oldData.cover?.backgroundColor !== undefined && 
-      oldData.cover?.textElements !== undefined &&
-      oldData.cover?.backgroundImage !== undefined) {
+  if (oldData.cover?.backgroundColor !== undefined &&
+    oldData.cover?.textElements !== undefined &&
+    oldData.cover?.backgroundImage !== undefined) {
     return oldData as JCardData;
   }
-  
+
   // 기존 구조라면 initialJCardData 반환
   return initialJCardData;
 };
@@ -23,11 +23,16 @@ const migrateOldData = (oldData: any): JCardData => {
 export default function JCardEditorPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   // 이전 페이지에서 전달받은 데이터가 있으면 사용
   const receivedData = location.state?.jCardData;
   const initialData = receivedData ? migrateOldData(receivedData) : initialJCardData;
-  
+
+  // 라벨 데이터 보존을 위한 state 읽기
+  const labelDataA = location.state?.labelDataA;
+  const labelDataB = location.state?.labelDataB;
+  const dualSideMode = location.state?.dualSideMode;
+
   const [jCardData, setJCardData] = useState<JCardData>(initialData);
   const [activeTab, setActiveTab] = useState<'cover' | 'spine' | 'flap'>('cover');
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
@@ -50,8 +55,15 @@ export default function JCardEditorPage() {
   };
 
   const handleComplete = () => {
-    // J카드 프리뷰 페이지로 이동하면서 데이터 전달
-    navigate('/create/jcard/preview', { state: { jCardData } });
+    // J카드 프리뷰 페이지로 이동하면서 데이터 전달 (라벨 데이터도 함께 전달)
+    navigate('/create/jcard/preview', {
+      state: {
+        jCardData,
+        labelDataA,
+        labelDataB,
+        dualSideMode
+      }
+    });
   };
 
   return (

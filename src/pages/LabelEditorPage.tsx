@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import {
   ArrowLeft, ArrowRight, Eye, EyeOff, ZoomIn, ZoomOut,
   Plus, Trash2, X, Check, Image, Type, HelpCircle,
-  AlignCenter, AlignLeft, AlignRight, Bold, ChevronDown, ChevronUp
+  AlignCenter, AlignLeft, AlignRight, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -73,6 +73,8 @@ export default function LabelEditorPage() {
   const safeHeight = LABEL_DIMENSIONS.safe.height * previewScale;
   const windowWidth = LABEL_DIMENSIONS.window.width * previewScale;
   const windowHeight = LABEL_DIMENSIONS.window.height * previewScale;
+  const windowX = (bleedWidth - windowWidth) / 2;
+  const windowY = bleedHeight - windowHeight - (11 * previewScale);
   const windowRadius = LABEL_DIMENSIONS.window.cornerRadius * previewScale;
 
   // Font loading effect
@@ -208,7 +210,7 @@ export default function LabelEditorPage() {
       id: Date.now().toString(),
       text: '새 텍스트',
       x: 0,
-      y: 0,
+      y: -((LABEL_DIMENSIONS.window.height * previewScale) / 2 + 20),
       fontSize: 14,
       fontFamily: 'Inter',
       color: '#000000',
@@ -237,11 +239,25 @@ export default function LabelEditorPage() {
 
   // 텍스트가 윈도우 영역 안에 있는지 체크
   const isInWindowZone = (x: number, y: number, width: number): boolean => {
-    const halfWindowW = windowWidth / 2 + 20;
-    const halfWindowH = windowHeight / 2 + 10;
-    const textHalfW = width / 2;
+    // 요소의 중심 좌표를 top-left 기준 좌표로 변환
+    const elementCenterX = bleedWidth / 2 + x;
+    const elementCenterY = bleedHeight / 2 + y;
+    const elementHalfW = width / 2;
+    const elementHalfH = 10; // Approximate text height half
 
-    return Math.abs(x) < halfWindowW + textHalfW && Math.abs(y) < halfWindowH;
+    // 윈도우 영역 (여유분 포함)
+    const zoneX = windowX - 10;
+    const zoneY = windowY - 5;
+    const zoneW = windowWidth + 20;
+    const zoneH = windowHeight + 10;
+
+    // AABB 충돌 검사
+    return (
+      elementCenterX + elementHalfW > zoneX &&
+      elementCenterX - elementHalfW < zoneX + zoneW &&
+      elementCenterY + elementHalfH > zoneY &&
+      elementCenterY - elementHalfH < zoneY + zoneH
+    );
   };
 
   // Mouse handlers for drag
@@ -357,12 +373,19 @@ export default function LabelEditorPage() {
     if (!element) return;
 
     const currentY = element.y;
-    if (currentY >= 0) {
-      // 하단 영역의 중앙
-      updateTextElement(id, { y: (safeHeight / 2 + windowHeight / 2) / 2 });
+    // 윈도우 중심 Y 좌표 (중앙 기준)
+    const windowCenterY = windowY + windowHeight / 2 - bleedHeight / 2;
+
+    if (currentY >= windowCenterY) {
+      // 윈도우 아래쪽 영역의 중앙
+      const bottomAreaHeight = bleedHeight - (windowY + windowHeight);
+      const targetY = (windowY + windowHeight) + bottomAreaHeight / 2 - bleedHeight / 2;
+      updateTextElement(id, { y: targetY });
     } else {
-      // 상단 영역의 중앙
-      updateTextElement(id, { y: -(safeHeight / 2 + windowHeight / 2) / 2 });
+      // 윈도우 위쪽 영역의 중앙
+      const topAreaHeight = windowY;
+      const targetY = topAreaHeight / 2 - bleedHeight / 2;
+      updateTextElement(id, { y: targetY });
     }
   };
 
@@ -376,7 +399,7 @@ export default function LabelEditorPage() {
 
   // 라벨 프리뷰 렌더링 함수
   const renderLabelPreview = (data: LabelData, id: string) => {
-    // SVG mask ID를 고유하게 생성 (가이드 꺼졌을 때만 사용)
+    // SVG mask ID를 고유하게 생성
     const maskId = `label-mask-editor-${id}`;
 
     return (
@@ -394,120 +417,154 @@ export default function LabelEditorPage() {
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onClick={(e) => {
+          e.stopPropagation();
           if (e.target === e.currentTarget) {
             setSelectedElement(null);
           }
         }}
       >
-        {/* SVG Mask for window cutout (가이드 꺼졌을 때만) */}
-        {!showGuides && (
-          <svg width="0" height="0" style={{ position: 'absolute' }}>
-            <defs>
-              <mask id={maskId}>
-                <rect width="100%" height="100%" fill="white" />
-                <rect
-                  x={bleedWidth / 2 - windowWidth / 2}
-                  y={bleedHeight / 2 - windowHeight / 2}
-                  width={windowWidth}
-                  height={windowHeight}
-                  rx={windowRadius}
-                  fill="black"
-                />
-              </mask>
-            </defs>
-          </svg>
-        )}
-        {/* Background Image */}
-        {data.backgroundImage && (() => {
-          const baseScale = data.baseImgSettings?.baseScale ?? 1;
-          const effectiveScale = baseScale * (data.baseImgSettings?.scale ?? 1);
-          const displayWidth = data.baseImgSettings?.originalWidth
-            ? data.baseImgSettings.originalWidth * effectiveScale
-            : undefined;
-          const displayHeight = data.baseImgSettings?.originalHeight
-            ? data.baseImgSettings.originalHeight * effectiveScale
-            : undefined;
-          return (
-            <div
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                overflow: 'hidden',
-                zIndex: 1,
-              }}
-            >
-              <img
-                src={data.backgroundImage}
-                alt="Background"
-                style={{
-                  width: displayWidth ? `${displayWidth}px` : 'auto',
-                  height: displayHeight ? `${displayHeight}px` : 'auto',
-                  position: 'absolute',
-                  top: '50%',
-                  left: '50%',
-                  transform: `translate(calc(-50% + ${data.baseImgSettings?.x ?? 0}px), calc(-50% + ${data.baseImgSettings?.y ?? 0}px))`,
-                  transformOrigin: 'center',
-                  cursor: 'move',
-                  pointerEvents: 'auto',
-                }}
-                onMouseDown={(e) => handleMouseDown(e, 'background', 'background')}
+        {/* SVG Mask for window cutout (Always rendered) */}
+        <svg width="0" height="0" style={{ position: 'absolute' }}>
+          <defs>
+            <mask id={maskId}>
+              <path
+                d={`
+                  M 0 0 H ${bleedWidth} V ${bleedHeight} H 0 Z
+                  M ${windowX + windowRadius} ${windowY}
+                  L ${windowX + windowWidth - windowRadius} ${windowY}
+                  A ${windowRadius} ${windowRadius} 0 0 1 ${windowX + windowWidth} ${windowY + windowRadius}
+                  L ${windowX + windowWidth} ${windowY + windowHeight - windowRadius}
+                  A ${windowRadius} ${windowRadius} 0 0 1 ${windowX + windowWidth - windowRadius} ${windowY + windowHeight}
+                  L ${windowX + windowRadius} ${windowY + windowHeight}
+                  A ${windowRadius} ${windowRadius} 0 0 1 ${windowX} ${windowY + windowHeight - windowRadius}
+                  L ${windowX} ${windowY + windowRadius}
+                  A ${windowRadius} ${windowRadius} 0 0 1 ${windowX + windowRadius} ${windowY}
+                  Z
+                `}
+                fill="white"
+                fillRule="evenodd"
               />
-            </div>
-          );
-        })()}
+            </mask>
+          </defs>
+        </svg>
 
-        {/* Additional Images */}
-        {(data.images || []).map((img) => {
-          const baseScale = img.baseScale ?? 1;
-          const effectiveScale = baseScale * img.scale;
-          const displayWidth = img.originalWidth ? img.originalWidth * effectiveScale : undefined;
-          const displayHeight = img.originalHeight ? img.originalHeight * effectiveScale : undefined;
-          const isSelected = selectedElement === img.id;
-
-          return (
-            <div
-              key={img.id}
-              style={{
-                position: 'absolute',
-                left: '50%',
-                top: '50%',
-                transform: `translate(calc(-50% + ${img.x}px), calc(-50% + ${img.y}px))`,
-                transformOrigin: 'center',
-                cursor: 'move',
-                pointerEvents: 'auto',
-                zIndex: 2,
-                border: isSelected ? '2px solid #4CAF50' : '2px solid transparent',
-                padding: '2px',
-              }}
-              onMouseDown={(e) => handleMouseDown(e, img.id, 'image')}
-            >
-              <img
-                src={img.src}
-                alt={`Image ${img.id}`}
-                style={{
-                  display: 'block',
-                  width: displayWidth ? `${displayWidth}px` : 'auto',
-                  height: displayHeight ? `${displayHeight}px` : 'auto',
-                  userSelect: 'none',
-                  pointerEvents: 'none',
-                }}
-              />
-            </div>
-          );
-        })}
-
-        {/* Text Elements */}
+        {/* Images Wrapper (Masked) */}
         <div style={{
           position: 'absolute',
           top: 0,
           left: 0,
           width: '100%',
           height: '100%',
-          mask: !showGuides ? `url(#${maskId})` : 'none',
-          WebkitMask: !showGuides ? `url(#${maskId})` : 'none',
+          overflow: 'hidden', // Ensure content stays within bleed
+          zIndex: 1,
+          pointerEvents: 'none'
+        }}>
+          {/* Inner container with mask */}
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            mask: `url(#${maskId})`,
+            WebkitMask: `url(#${maskId})`,
+            zIndex: 1,
+            pointerEvents: 'none'
+          }}>
+            {/* Background Image */}
+            {data.backgroundImage && (() => {
+              const baseScale = data.baseImgSettings?.baseScale ?? 1;
+              const effectiveScale = baseScale * (data.baseImgSettings?.scale ?? 1);
+              const displayWidth = data.baseImgSettings?.originalWidth
+                ? data.baseImgSettings.originalWidth * effectiveScale
+                : undefined;
+              const displayHeight = data.baseImgSettings?.originalHeight
+                ? data.baseImgSettings.originalHeight * effectiveScale
+                : undefined;
+              return (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    overflow: 'hidden',
+                    pointerEvents: 'auto'
+                  }}
+                >
+                  <img
+                    src={data.backgroundImage}
+                    alt="Background"
+                    style={{
+                      width: displayWidth ? `${displayWidth}px` : 'auto',
+                      height: displayHeight ? `${displayHeight}px` : 'auto',
+                      position: 'absolute',
+                      top: '50%',
+                      left: '50%',
+                      transform: `translate(calc(-50% + ${data.baseImgSettings?.x ?? 0}px), calc(-50% + ${data.baseImgSettings?.y ?? 0}px))`,
+                      transformOrigin: 'center',
+                      cursor: 'move',
+                      pointerEvents: 'auto',
+                    }}
+                    onMouseDown={(e) => handleMouseDown(e, 'background', 'background')}
+                  />
+                </div>
+              );
+            })()}
+
+            {/* Additional Images */}
+            {(data.images || []).map((img) => {
+              const baseScale = img.baseScale ?? 1;
+              const effectiveScale = baseScale * img.scale;
+              const displayWidth = img.originalWidth ? img.originalWidth * effectiveScale : undefined;
+              const displayHeight = img.originalHeight ? img.originalHeight * effectiveScale : undefined;
+              const isSelected = selectedElement === img.id;
+
+              return (
+                <div
+                  key={img.id}
+                  style={{
+                    position: 'absolute',
+                    left: '50%',
+                    top: '50%',
+                    transform: `translate(calc(-50% + ${img.x}px), calc(-50% + ${img.y}px))`,
+                    transformOrigin: 'center',
+                    cursor: 'move',
+                    pointerEvents: 'auto',
+                    zIndex: 2,
+                    border: isSelected ? '2px solid #4CAF50' : '2px solid transparent',
+                    padding: '2px',
+                  }}
+                  onMouseDown={(e) => handleMouseDown(e, img.id, 'image')}
+                >
+                  <img
+                    src={img.src}
+                    alt={`Image ${img.id}`}
+                    style={{
+                      display: 'block',
+                      width: displayWidth ? `${displayWidth}px` : 'auto',
+                      height: displayHeight ? `${displayHeight}px` : 'auto',
+                      userSelect: 'none',
+                      pointerEvents: 'none',
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Text Elements (Unmasked, High Z-Index) */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: 110, // Above window div
+          pointerEvents: 'none',
+          boxSizing: 'border-box', // Added as per instruction
         }}>
           {(data.textElements || []).map((el) => {
             const isSelected = selectedElement === el.id;
@@ -533,12 +590,14 @@ export default function LabelEditorPage() {
                   cursor: 'move',
                   pointerEvents: 'auto',
                   userSelect: 'none',
-                  zIndex: 50,
                   padding: '4px',
                   border: isSelected ? '1px dashed rgba(0,0,0,0.5)' : '1px dashed transparent',
                   backgroundColor: isSelected ? 'rgba(255,255,255,0.1)' : 'transparent',
                 }}
-                onMouseDown={(e) => handleMouseDown(e, el.id, 'text')}
+                onMouseDown={(e) => {
+                  e.stopPropagation(); // Prevent deselection
+                  handleMouseDown(e, el.id, 'text');
+                }}
               >
                 {el.text}
                 {/* Resize handle */}
@@ -572,9 +631,9 @@ export default function LabelEditorPage() {
             height: windowHeight,
             borderRadius: windowRadius,
             position: 'absolute',
-            top: '50%',
+            top: windowY,
             left: '50%',
-            transform: 'translate(-50%, -50%)',
+            transform: 'translateX(-50%)',
             background: showGuides ? 'rgba(128, 128, 128, 0.5)' : '#808080',
             border: showGuides ? '2px solid #e53935' : 'none',
             display: 'flex',
@@ -582,6 +641,7 @@ export default function LabelEditorPage() {
             justifyContent: 'center',
             zIndex: showGuides ? 60 : 100,
             pointerEvents: 'none',
+            boxSizing: 'border-box',
           }}
         >
           {showGuides && (
@@ -635,9 +695,8 @@ export default function LabelEditorPage() {
               height: windowHeight + 36,
               borderRadius: windowRadius + 4,
               position: 'absolute',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
+              top: windowY - 18,
+              left: windowX - 18,
               border: '2px dashed #2196f3',
               pointerEvents: 'none',
               zIndex: 101,
@@ -683,13 +742,21 @@ export default function LabelEditorPage() {
   };
 
   // 선택된 텍스트 요소
+  const selectedText = labelData.textElements?.find(el => el.id === selectedElement);
 
 
   return (
     <div className="label-editor-page">
       {/* Header */}
       <header className="label-editor-header">
-        <button className="back-btn" onClick={() => navigate('/create/jcard/preview', { state: { jCardData } })}>
+        <button className="back-btn" onClick={() => navigate('/create/jcard/preview', {
+          state: {
+            jCardData,
+            labelDataA,
+            labelDataB,
+            dualSideMode
+          }
+        })}>
           <ArrowLeft size={20} />
           <span>J카드로 돌아가기</span>
         </button>
@@ -708,7 +775,7 @@ export default function LabelEditorPage() {
 
       <div className="label-editor-content">
         {/* Editor Panel */}
-        <aside className="label-editor-panel" onClick={() => setSelectedElement(null)}>
+        <aside className="label-editor-panel" onClick={(e) => e.stopPropagation()}>
           {/* 가이드 설명 섹션 */}
           <div className="panel-section guide-info-section">
             <div
@@ -784,6 +851,9 @@ export default function LabelEditorPage() {
               />
               <span>양면 라벨 (Side A / B)</span>
             </label>
+            <p className="option-description">
+              선택하지 않을 시 양쪽이 같은 라벨로 인쇄됩니다
+            </p>
 
             {dualSideMode && (
               <div className="side-tabs" style={{ marginTop: '12px' }}>
@@ -925,9 +995,9 @@ export default function LabelEditorPage() {
                         />
                       </div>
                       <div className="align-buttons">
-                        <button onClick={() => centerImageHorizontally(img.id)} title="가로 중앙">↔</button>
-                        <button onClick={() => centerImageVertically(img.id)} title="세로 중앙">↕</button>
-                        <button onClick={() => { centerImageHorizontally(img.id); centerImageVertically(img.id); }} title="중앙">⊕</button>
+                        <button onClick={() => centerImageHorizontally(img.id)} title="가로 중앙 정렬">가로</button>
+                        <button onClick={() => centerImageVertically(img.id)} title="세로 중앙 정렬">세로</button>
+                        <button onClick={() => { centerImageHorizontally(img.id); centerImageVertically(img.id); }} title="정중앙 정렬">중앙</button>
                       </div>
                     </div>
                   )}
@@ -986,125 +1056,181 @@ export default function LabelEditorPage() {
                       <Trash2 size={14} />
                     </button>
                   </div>
-
-                  {isSelected && (
-                    <div className="element-controls">
-                      {/* 폰트 & 크기 */}
-                      <div className="control-row">
-                        <select
-                          value={el.fontFamily}
-                          onChange={(e) => updateTextElement(el.id, { fontFamily: e.target.value })}
-                          style={{ flex: 2 }}
-                        >
-                          {FONTS.map(font => <option key={font} value={font}>{font}</option>)}
-                        </select>
-                        <input
-                          type="number"
-                          value={el.fontSize}
-                          onChange={(e) => updateTextElement(el.id, { fontSize: parseInt(e.target.value) || 12 })}
-                          style={{ width: '60px' }}
-                        />
-                      </div>
-
-                      {/* 색상 & 스타일 */}
-                      <div className="control-row">
-                        <input
-                          type="color"
-                          value={el.color}
-                          onChange={(e) => updateTextElement(el.id, { color: e.target.value })}
-                          className="color-input"
-                        />
-                        <button
-                          className={`style-btn ${(el.fontWeight || 400) === 700 ? 'active' : ''}`}
-                          onClick={() => updateTextElement(el.id, { fontWeight: (el.fontWeight || 400) === 700 ? 400 : 700 })}
-                        >
-                          <Bold size={14} />
-                        </button>
-                        <button
-                          className={`style-btn ${el.textAlign === 'left' ? 'active' : ''}`}
-                          onClick={() => updateTextElement(el.id, { textAlign: 'left' })}
-                        >
-                          <AlignLeft size={14} />
-                        </button>
-                        <button
-                          className={`style-btn ${el.textAlign === 'center' || !el.textAlign ? 'active' : ''}`}
-                          onClick={() => updateTextElement(el.id, { textAlign: 'center' })}
-                        >
-                          <AlignCenter size={14} />
-                        </button>
-                        <button
-                          className={`style-btn ${el.textAlign === 'right' ? 'active' : ''}`}
-                          onClick={() => updateTextElement(el.id, { textAlign: 'right' })}
-                        >
-                          <AlignRight size={14} />
-                        </button>
-                      </div>
-
-                      {/* 너비 슬라이더 */}
-                      <div className="slider-control">
-                        <label>너비: {el.width || 150}px</label>
-                        <input
-                          type="range"
-                          min="50"
-                          max="400"
-                          step="10"
-                          value={el.width || 150}
-                          onChange={(e) => updateTextElement(el.id, { width: parseInt(e.target.value) })}
-                        />
-                      </div>
-
-                      {/* 자간 & 행간 */}
-                      <div className="control-row">
-                        <div className="mini-slider">
-                          <label>자간</label>
-                          <input
-                            type="range"
-                            min="-2"
-                            max="10"
-                            step="0.5"
-                            value={el.letterSpacing || 0}
-                            onChange={(e) => updateTextElement(el.id, { letterSpacing: parseFloat(e.target.value) })}
-                          />
-                          <span>{el.letterSpacing || 0}</span>
-                        </div>
-                        <div className="mini-slider">
-                          <label>행간</label>
-                          <input
-                            type="range"
-                            min="1"
-                            max="2.5"
-                            step="0.1"
-                            value={el.lineHeight || 1.4}
-                            onChange={(e) => updateTextElement(el.id, { lineHeight: parseFloat(e.target.value) })}
-                          />
-                          <span>{(el.lineHeight || 1.4).toFixed(1)}</span>
-                        </div>
-                      </div>
-
-                      {/* 정렬 버튼 */}
-                      <div className="align-buttons">
-                        <button onClick={() => centerTextHorizontally(el.id)} title="가로 중앙">↔</button>
-                        <button onClick={() => centerTextVertically(el.id)} title="세로 중앙">↕</button>
-                        <button onClick={() => { centerTextHorizontally(el.id); centerTextVertically(el.id); }} title="중앙">⊕</button>
-                      </div>
-                    </div>
-                  )}
                 </div>
               );
             })}
           </div>
 
-          {/* 가이드 토글 */}
-          <div className="panel-section" onClick={(e) => e.stopPropagation()}>
-            <label className="toggle-row">
-              <input
-                type="checkbox"
-                checked={showGuides}
-                onChange={(e) => setShowGuides(e.target.checked)}
-              />
-              <span>가이드라인 표시</span>
-            </label>
-          </div>
+          {/* 선택된 텍스트 스타일링 패널 (별도 섹션으로 분리) */}
+          {selectedText && (
+            <div className="panel-section" onClick={(e) => e.stopPropagation()}>
+              <div className="section-header">
+                <span className="section-title">텍스트 스타일</span>
+              </div>
+
+              {/* 폰트 선택 */}
+              <div className="control-row">
+                <label>폰트</label>
+                <select
+                  value={selectedText.fontFamily}
+                  onChange={(e) => updateTextElement(selectedText.id, { fontFamily: e.target.value })}
+                  className="font-select"
+                >
+                  {FONTS.map(font => (
+                    <option key={font} value={font} style={{ fontFamily: font }}>{font}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* 크기 & 굵기 */}
+              <div className="control-row two-col">
+                <div className="control-item">
+                  <label>크기</label>
+                  <input
+                    type="number"
+                    value={selectedText.fontSize}
+                    onChange={(e) => updateTextElement(selectedText.id, { fontSize: parseInt(e.target.value) || 12 })}
+                    className="number-input"
+                    min={8}
+                    max={200}
+                  />
+                </div>
+                <div className="control-item">
+                  <label>굵기</label>
+                  <select
+                    value={selectedText.fontWeight || 400}
+                    onChange={(e) => updateTextElement(selectedText.id, { fontWeight: parseInt(e.target.value) })}
+                    className="weight-select"
+                  >
+                    <option value={400}>Regular</option>
+                    <option value={500}>Medium</option>
+                    <option value={600}>SemiBold</option>
+                    <option value={700}>Bold</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* 색상 */}
+              <div className="control-row">
+                <label>색상</label>
+                <div className="color-input-wrapper">
+                  <input
+                    type="color"
+                    value={selectedText.color}
+                    onChange={(e) => updateTextElement(selectedText.id, { color: e.target.value })}
+                    className="color-picker"
+                  />
+                  <input
+                    type="text"
+                    value={selectedText.color}
+                    onChange={(e) => updateTextElement(selectedText.id, { color: e.target.value })}
+                    className="color-text"
+                  />
+                </div>
+              </div>
+
+              {/* 정렬 */}
+              <div className="control-row">
+                <label></label>
+                <div className="align-buttons">
+                  <button
+                    className={selectedText.textAlign === 'left' ? 'active' : ''}
+                    onClick={() => updateTextElement(selectedText.id, { textAlign: 'left' })}
+                  >
+                    <AlignLeft size={16} />
+                  </button>
+                  <button
+                    className={selectedText.textAlign === 'center' || !selectedText.textAlign ? 'active' : ''}
+                    onClick={() => updateTextElement(selectedText.id, { textAlign: 'center' })}
+                  >
+                    <AlignCenter size={16} />
+                  </button>
+                  <button
+                    className={selectedText.textAlign === 'right' ? 'active' : ''}
+                    onClick={() => updateTextElement(selectedText.id, { textAlign: 'right' })}
+                  >
+                    <AlignRight size={16} />
+                  </button>
+                </div>
+              </div>
+
+              {/* 자간 & 행간 */}
+              <div className="control-row two-col">
+                <div className="control-item">
+                  <label>자간</label>
+                  <input
+                    type="number"
+                    value={selectedText.letterSpacing || 0}
+                    onChange={(e) => updateTextElement(selectedText.id, { letterSpacing: parseFloat(e.target.value) || 0 })}
+                    className="number-input"
+                    step={0.5}
+                    min={-10}
+                    max={20}
+                  />
+                </div>
+                <div className="control-item">
+                  <label>행간</label>
+                  <input
+                    type="number"
+                    value={selectedText.lineHeight || 1.4}
+                    onChange={(e) => updateTextElement(selectedText.id, { lineHeight: parseFloat(e.target.value) || 1.4 })}
+                    className="number-input"
+                    step={0.1}
+                    min={0.8}
+                    max={3}
+                  />
+                </div>
+              </div>
+
+              {/* 너비 */}
+              <div className="control-row">
+                <label>너비</label>
+                <input
+                  type="range"
+                  min="50"
+                  max="400"
+                  step="10"
+                  value={selectedText.width || 150}
+                  onChange={(e) => updateTextElement(selectedText.id, { width: parseInt(e.target.value) })}
+                  style={{ flex: 1 }}
+                />
+                <span style={{ fontSize: '11px', color: '#888', minWidth: '35px', textAlign: 'right' }}>
+                  {selectedText.width || 150}px
+                </span>
+              </div>
+
+              {/* 위치 초기화 */}
+              <div className="control-row">
+                <label>정렬</label>
+                <div className="position-buttons">
+                  <button
+                    className="position-btn"
+                    onClick={() => centerTextHorizontally(selectedText.id)}
+                    title="가로 중앙 정렬"
+                  >
+                    가로
+                  </button>
+                  <button
+                    className="position-btn"
+                    onClick={() => centerTextVertically(selectedText.id)}
+                    title="세로 중앙 정렬"
+                  >
+                    세로
+                  </button>
+                  <button
+                    className="position-btn"
+                    onClick={() => { centerTextHorizontally(selectedText.id); centerTextVertically(selectedText.id); }}
+                    title="정중앙 정렬"
+                  >
+                    중앙
+                  </button>
+                </div>
+              </div>
+              <p className="control-description">
+                텍스트 박스의 위치를 가로, 세로, 정중앙으로 정렬합니다.
+              </p>
+            </div>
+          )}
         </aside>
 
         {/* Preview Area */}
@@ -1142,27 +1268,25 @@ export default function LabelEditorPage() {
             {/* Label Preview */}
             {renderLabelPreview(labelData, 'label-preview')}
 
-            {/* Guide Legend */}
-            {showGuides && (
-              <div className="guide-legend">
-                <div className="legend-item">
-                  <span className="legend-color bleed"></span>
-                  <span>블리드 영역</span>
-                </div>
-                <div className="legend-item">
-                  <span className="legend-color cut"></span>
-                  <span>재단선</span>
-                </div>
-                <div className="legend-item">
-                  <span className="legend-color safe"></span>
-                  <span>안전 영역</span>
-                </div>
-                <div className="legend-item">
-                  <span className="legend-color window"></span>
-                  <span>투명창</span>
-                </div>
+            {/* Guide Legend - Always visible */}
+            <div className="guide-legend">
+              <div className="legend-item">
+                <span className="legend-color bleed"></span>
+                <span>블리드 영역</span>
               </div>
-            )}
+              <div className="legend-item">
+                <span className="legend-color cut"></span>
+                <span>재단선</span>
+              </div>
+              <div className="legend-item">
+                <span className="legend-color safe"></span>
+                <span>안전 영역</span>
+              </div>
+              <div className="legend-item">
+                <span className="legend-color window"></span>
+                <span>투명창</span>
+              </div>
+            </div>
           </motion.div>
 
           {/* Dimensions Info */}
@@ -1176,3 +1300,4 @@ export default function LabelEditorPage() {
     </div>
   );
 }
+

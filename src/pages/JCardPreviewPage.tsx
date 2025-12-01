@@ -9,18 +9,23 @@ import './JCardPreviewPage.css';
 
 // 데이터 유효성 검증
 const isValidJCardData = (data: any): data is JCardData => {
-  return data && 
-         data.cover?.backgroundColor !== undefined && 
-         data.cover?.backgroundImageSettings !== undefined &&
-         data.cover?.textElements !== undefined &&
-         data.spine?.backgroundColor !== undefined &&
-         data.flap?.backgroundColor !== undefined;
+  return data &&
+    data.cover?.backgroundColor !== undefined &&
+    data.cover?.backgroundImageSettings !== undefined &&
+    data.cover?.textElements !== undefined &&
+    data.spine?.backgroundColor !== undefined &&
+    data.flap?.backgroundColor !== undefined;
 };
 
 export default function JCardPreviewPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const jCardData = location.state?.jCardData as JCardData | undefined;
+  // 라벨 데이터 보존
+  const labelDataA = location.state?.labelDataA;
+  const labelDataB = location.state?.labelDataB;
+  const dualSideMode = location.state?.dualSideMode;
+
   const [isExporting, setIsExporting] = useState(false);
 
   // 데이터가 없거나 유효하지 않으면 에디터로 리다이렉트
@@ -52,11 +57,25 @@ export default function JCardPreviewPage() {
   };
 
   const handleContinue = () => {
-    navigate('/create/label', { state: { jCardData } });
+    navigate('/create/label', {
+      state: {
+        jCardData,
+        labelDataA,
+        labelDataB,
+        dualSideMode
+      }
+    });
   };
 
   const handleEdit = () => {
-    navigate('/create/jcard', { state: { jCardData } });
+    navigate('/create/jcard', {
+      state: {
+        jCardData,
+        labelDataA,
+        labelDataB,
+        dualSideMode
+      }
+    });
   };
 
   return (
@@ -71,15 +90,12 @@ export default function JCardPreviewPage() {
           <span className="step-indicator">J카드 완성</span>
           <h1>디자인 확인</h1>
         </div>
-        <button className="next-btn" onClick={handleContinue}>
-          <span>라벨 디자인</span>
-          <ArrowRight size={20} />
-        </button>
+
       </header>
 
       <div className="preview-content">
         {/* Preview Section */}
-        <motion.div 
+        <motion.div
           className="preview-main"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -90,10 +106,10 @@ export default function JCardPreviewPage() {
               <Check size={16} />
               <span>J카드 완성!</span>
             </div>
-            
+
             <div className="jcard-preview-wrapper" id="jcard-final-preview">
-              <JCardPreview 
-                data={jCardData} 
+              <JCardPreview
+                data={jCardData}
                 showGuides={false}
               />
             </div>
@@ -142,7 +158,7 @@ export default function JCardPreviewPage() {
             <h3>이미지 저장</h3>
             <p>현재 디자인을 이미지로 저장할 수 있어요.</p>
             <div className="export-buttons">
-              <button 
+              <button
                 className="export-btn"
                 onClick={() => handleExport('png')}
                 disabled={isExporting}
@@ -150,7 +166,7 @@ export default function JCardPreviewPage() {
                 <Download size={16} />
                 <span>PNG</span>
               </button>
-              <button 
+              <button
                 className="export-btn"
                 onClick={() => handleExport('jpeg')}
                 disabled={isExporting}

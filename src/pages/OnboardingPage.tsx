@@ -38,7 +38,7 @@ const steps: Step[] = [
     id: 4,
     title: '준비 완료!',
     subtitle: 'READY TO CREATE',
-    description: '이제 나만의 카세트를 만들 준비가 되었어요! J카드 → 라벨 → 목업 확인 → 주문 순서로 진행됩니다. 완성된 카세트는 실물로 제작되어 집으로 배송돼요.',
+    description: '이제 나만의 카세트를 만들 준비가 되었어요! J카드 → 라벨 순서로 만들고 파일로 다운받을 수 있어요(무료). 원하시면 저희가 인쇄해서 보내드려요!',
     visual: 'complete',
   },
 ];
@@ -167,7 +167,7 @@ function JCardVisual() {
     <div className="visual jcard-visual">
       <div className="jcard-image-placeholder">
         <img
-          src="https://placehold.co/800x400/1a1a1a/ffffff?text=J-Card+Example"
+          src="/images/jcard_example_image.png"
           alt="J-Card Example"
         />
       </div>
@@ -180,7 +180,7 @@ function LabelVisual() {
     <div className="visual label-visual">
       <div className="label-image-placeholder">
         <img
-          src="https://placehold.co/800x400/1a1a1a/ffffff?text=Label+Example"
+          src="/images/label_example_image.png"
           alt="Label Example"
         />
       </div>
