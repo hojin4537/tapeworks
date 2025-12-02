@@ -374,7 +374,7 @@ const JCardPreview: React.FC<JCardPreviewProps> = ({
             display: 'flex',
             width: `${totalWidth}px`,
             height: `${totalHeight}px`,
-            backgroundColor: 'transparent',
+            backgroundColor: '#ffffff',
             boxShadow: '0 0 20px rgba(0,0,0,0.5)',
             position: 'relative' as const,
             boxSizing: 'border-box' as const,

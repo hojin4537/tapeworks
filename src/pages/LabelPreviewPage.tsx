@@ -74,8 +74,8 @@ export default function LabelPreviewPage() {
 
   // 라벨 프리뷰 렌더링
   const renderLabelPreview = (data: LabelData) => {
-    // SVG mask ID를 고유하게 생성
-    const maskId = `label-mask-${Math.random().toString(36).substr(2, 9)}`;
+    // SVG clipPath ID를 고유하게 생성
+    const clipId = `label-clip-${Math.random().toString(36).substr(2, 9)}`;
 
     return (
       <div
@@ -85,13 +85,13 @@ export default function LabelPreviewPage() {
           position: 'relative',
           overflow: 'hidden',
           borderRadius: '4px',
-          backgroundColor: '#fff', // Default background
+          // backgroundColor removed, handled by clipped container
         }}
       >
-        {/* SVG Mask for window cutout */}
+        {/* SVG ClipPath Definition */}
         <svg width="0" height="0" style={{ position: 'absolute' }}>
           <defs>
-            <mask id={maskId}>
+            <clipPath id={clipId}>
               <path
                 d={`
                   M 0 0 H ${bleedWidth} V ${bleedHeight} H 0 Z
@@ -106,10 +106,9 @@ export default function LabelPreviewPage() {
                   A ${windowRadius} ${windowRadius} 0 0 1 ${windowX + windowRadius} ${windowY}
                   Z
                 `}
-                fill="white"
-                fillRule="evenodd"
+                clipRule="evenodd"
               />
-            </mask>
+            </clipPath>
           </defs>
         </svg>
 
@@ -128,7 +127,7 @@ export default function LabelPreviewPage() {
           }}
         />
 
-        {/* Masked Content Wrapper */}
+        {/* Clipped Content Container */}
         <div style={{
           position: 'absolute',
           top: 0,
@@ -136,8 +135,8 @@ export default function LabelPreviewPage() {
           width: '100%',
           height: '100%',
           backgroundColor: data.backgroundColor,
-          mask: `url(#${maskId})`,
-          WebkitMask: `url(#${maskId})`,
+          clipPath: `url(#${clipId})`,
+          WebkitClipPath: `url(#${clipId})`,
           zIndex: 1,
         }}>
           {/* Background Image */}
@@ -168,8 +167,10 @@ export default function LabelPreviewPage() {
 
           {/* Additional Images */}
           {(data.images || []).map((img) => {
-            const displayWidth = img.originalWidth ? img.originalWidth * img.scale : undefined;
-            const displayHeight = img.originalHeight ? img.originalHeight * img.scale : undefined;
+            const baseScale = img.baseScale ?? 1;
+            const effectiveScale = baseScale * img.scale;
+            const displayWidth = img.originalWidth ? img.originalWidth * effectiveScale : undefined;
+            const displayHeight = img.originalHeight ? img.originalHeight * effectiveScale : undefined;
             return (
               <img
                 key={img.id}

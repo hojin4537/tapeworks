@@ -507,3 +507,35 @@
   display: flex;
   gap: 8px;
 }
+
+/* Empty State */
+.order-page.empty-state {
+  align-items: center;
+  justify-content: center;
+}
+
+.empty-content {
+  text-align: center;
+}
+
+.empty-content h2 {
+  font-size: 24px;
+  margin-bottom: 24px;
+  color: #fff;
+}
+
+.empty-content button {
+  padding: 12px 24px;
+  background: #ff6b35;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.empty-content button:hover {
+  background: #e55a2b;
+}

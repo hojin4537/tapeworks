@@ -172,11 +172,18 @@ export default function LabelEditorPage() {
           const scaleX = (bleedWidth * 0.3) / img.width;
           const baseScale = scaleX;
 
+          // 기본 위치를 윈도우 위쪽 영역 중앙으로 설정
+          // Window top is at LABEL_DIMENSIONS.window.y (16.5mm)
+          // Center of label is LABEL_DIMENSIONS.bleed.height / 2 (22mm)
+          // Target Y (mm from center) = (16.5 / 2) - 22 = 8.25 - 22 = -13.75mm
+          const safeYmm = (LABEL_DIMENSIONS.window.y / 2) - (LABEL_DIMENSIONS.bleed.height / 2);
+          const safeYpx = safeYmm * previewScale;
+
           const newImage: ImageElement = {
             id: Date.now().toString(),
             src: reader.result as string,
             x: 0,
-            y: 0,
+            y: safeYpx,
             scale: 1,
             baseScale: baseScale,
             originalWidth: img.width,
@@ -394,13 +401,31 @@ export default function LabelEditorPage() {
   };
 
   const centerImageVertically = (id: string) => {
-    updateImage(id, { y: 0 });
+    // 윈도우 영역 피해서 상단 또는 하단에 배치 (텍스트와 동일한 로직)
+    const element = labelData.images?.find(img => img.id === id);
+    if (!element) return;
+
+    const currentY = element.y;
+    // 윈도우 중심 Y 좌표 (중앙 기준)
+    const windowCenterY = windowY + windowHeight / 2 - bleedHeight / 2;
+
+    if (currentY >= windowCenterY) {
+      // 윈도우 아래쪽 영역의 중앙
+      const bottomAreaHeight = bleedHeight - (windowY + windowHeight);
+      const targetY = (windowY + windowHeight) + bottomAreaHeight / 2 - bleedHeight / 2;
+      updateImage(id, { y: targetY });
+    } else {
+      // 윈도우 위쪽 영역의 중앙
+      const topAreaHeight = windowY;
+      const targetY = topAreaHeight / 2 - bleedHeight / 2;
+      updateImage(id, { y: targetY });
+    }
   };
 
   // 라벨 프리뷰 렌더링 함수
   const renderLabelPreview = (data: LabelData, id: string) => {
-    // SVG mask ID를 고유하게 생성
-    const maskId = `label-mask-editor-${id}`;
+    // SVG clipPath ID를 고유하게 생성
+    const clipId = `label-clip-${id}`;
 
     return (
       <div
@@ -409,7 +434,7 @@ export default function LabelEditorPage() {
         style={{
           width: bleedWidth,
           height: bleedHeight,
-          backgroundColor: data.backgroundColor,
+          // backgroundColor is now handled inside the clipped area
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -423,10 +448,10 @@ export default function LabelEditorPage() {
           }
         }}
       >
-        {/* SVG Mask for window cutout (Always rendered) */}
+        {/* SVG ClipPath Definition */}
         <svg width="0" height="0" style={{ position: 'absolute' }}>
           <defs>
-            <mask id={maskId}>
+            <clipPath id={clipId}>
               <path
                 d={`
                   M 0 0 H ${bleedWidth} V ${bleedHeight} H 0 Z
@@ -441,118 +466,105 @@ export default function LabelEditorPage() {
                   A ${windowRadius} ${windowRadius} 0 0 1 ${windowX + windowRadius} ${windowY}
                   Z
                 `}
-                fill="white"
-                fillRule="evenodd"
+                clipRule="evenodd"
               />
-            </mask>
+            </clipPath>
           </defs>
         </svg>
 
-        {/* Images Wrapper (Masked) */}
+        {/* Clipped Content Container */}
         <div style={{
           position: 'absolute',
           top: 0,
           left: 0,
           width: '100%',
           height: '100%',
-          overflow: 'hidden', // Ensure content stays within bleed
+          clipPath: `url(#${clipId})`,
+          WebkitClipPath: `url(#${clipId})`,
+          backgroundColor: data.backgroundColor,
           zIndex: 1,
-          pointerEvents: 'none'
         }}>
-          {/* Inner container with mask */}
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            mask: `url(#${maskId})`,
-            WebkitMask: `url(#${maskId})`,
-            zIndex: 1,
-            pointerEvents: 'none'
-          }}>
-            {/* Background Image */}
-            {data.backgroundImage && (() => {
-              const baseScale = data.baseImgSettings?.baseScale ?? 1;
-              const effectiveScale = baseScale * (data.baseImgSettings?.scale ?? 1);
-              const displayWidth = data.baseImgSettings?.originalWidth
-                ? data.baseImgSettings.originalWidth * effectiveScale
-                : undefined;
-              const displayHeight = data.baseImgSettings?.originalHeight
-                ? data.baseImgSettings.originalHeight * effectiveScale
-                : undefined;
-              return (
-                <div
+          {/* Background Image */}
+          {data.backgroundImage && (() => {
+            const baseScale = data.baseImgSettings?.baseScale ?? 1;
+            const effectiveScale = baseScale * (data.baseImgSettings?.scale ?? 1);
+            const displayWidth = data.baseImgSettings?.originalWidth
+              ? data.baseImgSettings.originalWidth * effectiveScale
+              : undefined;
+            const displayHeight = data.baseImgSettings?.originalHeight
+              ? data.baseImgSettings.originalHeight * effectiveScale
+              : undefined;
+            return (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  overflow: 'hidden',
+                  pointerEvents: 'auto'
+                }}
+              >
+                <img
+                  src={data.backgroundImage}
+                  alt="Background"
                   style={{
+                    width: displayWidth ? `${displayWidth}px` : 'auto',
+                    height: displayHeight ? `${displayHeight}px` : 'auto',
                     position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    overflow: 'hidden',
-                    pointerEvents: 'auto'
-                  }}
-                >
-                  <img
-                    src={data.backgroundImage}
-                    alt="Background"
-                    style={{
-                      width: displayWidth ? `${displayWidth}px` : 'auto',
-                      height: displayHeight ? `${displayHeight}px` : 'auto',
-                      position: 'absolute',
-                      top: '50%',
-                      left: '50%',
-                      transform: `translate(calc(-50% + ${data.baseImgSettings?.x ?? 0}px), calc(-50% + ${data.baseImgSettings?.y ?? 0}px))`,
-                      transformOrigin: 'center',
-                      cursor: 'move',
-                      pointerEvents: 'auto',
-                    }}
-                    onMouseDown={(e) => handleMouseDown(e, 'background', 'background')}
-                  />
-                </div>
-              );
-            })()}
-
-            {/* Additional Images */}
-            {(data.images || []).map((img) => {
-              const baseScale = img.baseScale ?? 1;
-              const effectiveScale = baseScale * img.scale;
-              const displayWidth = img.originalWidth ? img.originalWidth * effectiveScale : undefined;
-              const displayHeight = img.originalHeight ? img.originalHeight * effectiveScale : undefined;
-              const isSelected = selectedElement === img.id;
-
-              return (
-                <div
-                  key={img.id}
-                  style={{
-                    position: 'absolute',
-                    left: '50%',
                     top: '50%',
-                    transform: `translate(calc(-50% + ${img.x}px), calc(-50% + ${img.y}px))`,
+                    left: '50%',
+                    transform: `translate(calc(-50% + ${data.baseImgSettings?.x ?? 0}px), calc(-50% + ${data.baseImgSettings?.y ?? 0}px))`,
                     transformOrigin: 'center',
                     cursor: 'move',
                     pointerEvents: 'auto',
-                    zIndex: 2,
-                    border: isSelected ? '2px solid #4CAF50' : '2px solid transparent',
-                    padding: '2px',
                   }}
-                  onMouseDown={(e) => handleMouseDown(e, img.id, 'image')}
-                >
-                  <img
-                    src={img.src}
-                    alt={`Image ${img.id}`}
-                    style={{
-                      display: 'block',
-                      width: displayWidth ? `${displayWidth}px` : 'auto',
-                      height: displayHeight ? `${displayHeight}px` : 'auto',
-                      userSelect: 'none',
-                      pointerEvents: 'none',
-                    }}
-                  />
-                </div>
-              );
-            })}
-          </div>
+                  onMouseDown={(e) => handleMouseDown(e, 'background', 'background')}
+                />
+              </div>
+            );
+          })()}
+
+          {/* Additional Images */}
+          {(data.images || []).map((img) => {
+            const baseScale = img.baseScale ?? 1;
+            const effectiveScale = baseScale * img.scale;
+            const displayWidth = img.originalWidth ? img.originalWidth * effectiveScale : undefined;
+            const displayHeight = img.originalHeight ? img.originalHeight * effectiveScale : undefined;
+            const isSelected = selectedElement === img.id;
+
+            return (
+              <div
+                key={img.id}
+                style={{
+                  position: 'absolute',
+                  left: '50%',
+                  top: '50%',
+                  transform: `translate(calc(-50% + ${img.x}px), calc(-50% + ${img.y}px))`,
+                  transformOrigin: 'center',
+                  cursor: 'move',
+                  pointerEvents: 'auto',
+                  zIndex: 2,
+                  border: isSelected ? '2px solid #4CAF50' : '2px solid transparent',
+                  padding: '2px',
+                }}
+                onMouseDown={(e) => handleMouseDown(e, img.id, 'image')}
+              >
+                <img
+                  src={img.src}
+                  alt={`Image ${img.id}`}
+                  style={{
+                    display: 'block',
+                    width: displayWidth ? `${displayWidth}px` : 'auto',
+                    height: displayHeight ? `${displayHeight}px` : 'auto',
+                    userSelect: 'none',
+                    pointerEvents: 'none',
+                  }}
+                />
+              </div>
+            );
+          })}
         </div>
 
         {/* Text Elements (Unmasked, High Z-Index) */}

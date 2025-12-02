@@ -1,4 +1,4 @@
-import type { ImageElement, TextElement, TextStyle } from '../types';
+import type { ImageElement, TextElement, TextStyle } from '../types.ts';
 
 // 카세트 라벨 물리 사이즈 (mm 단위)
 // 가로 가장 긴 부분 90mm 기준

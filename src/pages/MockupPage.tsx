@@ -39,8 +39,9 @@ export default function MockupPage() {
   }
 
   const handleOrder = () => {
-    // 래피드 결제 페이지로 이동
-    window.open('https://www.latpeed.com/products/dx_Gx', '_blank');
+    navigate('/create/order', {
+      state: { jCardData, labelDataA, labelDataB, dualSideMode }
+    });
   };
 
   const handleBack = () => {
@@ -100,8 +101,8 @@ export default function MockupPage() {
   const currentLabelData = labelSide === 'A' ? labelDataA : (labelDataB || labelDataA);
 
   const renderLabelPreview = (data: LabelData) => {
-    // SVG mask ID를 고유하게 생성
-    const maskId = `label-mask-${Math.random().toString(36).substr(2, 9)}`;
+    // SVG clipPath ID를 고유하게 생성
+    const clipId = `label-clip-mockup-${Math.random().toString(36).substr(2, 9)}`;
 
     return (
       <div
@@ -110,17 +111,17 @@ export default function MockupPage() {
         style={{
           width: bleedWidth,
           height: bleedHeight,
-          backgroundColor: data.backgroundColor,
+          // backgroundColor removed, handled by clipped container
           position: 'relative',
           overflow: 'hidden',
-          borderRadius: '4px', // Changed to 4px to match preview
+          borderRadius: '4px',
           boxShadow: '0 10px 40px rgba(0,0,0,0.4)',
         }}
       >
-        {/* SVG Mask for window cutout */}
+        {/* SVG ClipPath Definition */}
         <svg width="0" height="0" style={{ position: 'absolute' }}>
           <defs>
-            <mask id={maskId}>
+            <clipPath id={clipId}>
               <path
                 d={`
                   M 0 0 H ${bleedWidth} V ${bleedHeight} H 0 Z
@@ -135,10 +136,9 @@ export default function MockupPage() {
                   A ${windowRadius} ${windowRadius} 0 0 1 ${windowX + windowRadius} ${windowY}
                   Z
                 `}
-                fill="white"
-                fillRule="evenodd"
+                clipRule="evenodd"
               />
-            </mask>
+            </clipPath>
           </defs>
         </svg>
 
@@ -157,7 +157,7 @@ export default function MockupPage() {
           }}
         />
 
-        {/* Masked Content Wrapper */}
+        {/* Clipped Content Container */}
         <div style={{
           position: 'absolute',
           top: 0,
@@ -165,8 +165,8 @@ export default function MockupPage() {
           width: '100%',
           height: '100%',
           backgroundColor: data.backgroundColor,
-          mask: `url(#${maskId})`,
-          WebkitMask: `url(#${maskId})`,
+          clipPath: `url(#${clipId})`,
+          WebkitClipPath: `url(#${clipId})`,
           zIndex: 1,
         }}>
           {/* Background Image */}
@@ -197,8 +197,10 @@ export default function MockupPage() {
 
           {/* Additional Images */}
           {(data.images || []).map((img) => {
-            const displayWidth = img.originalWidth ? img.originalWidth * img.scale : undefined;
-            const displayHeight = img.originalHeight ? img.originalHeight * img.scale : undefined;
+            const baseScale = img.baseScale ?? 1;
+            const effectiveScale = baseScale * img.scale;
+            const displayWidth = img.originalWidth ? img.originalWidth * effectiveScale : undefined;
+            const displayHeight = img.originalHeight ? img.originalHeight * effectiveScale : undefined;
             return (
               <img
                 key={img.id}
