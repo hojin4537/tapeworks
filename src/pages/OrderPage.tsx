@@ -537,7 +537,7 @@ export default function OrderPage() {
                     <div className="summary-price">
                         <div className="price-row total">
                             <span>결제 예정 금액</span>
-                            <span>₩24,000</span>
+                            <span>₩4,990</span>
                         </div>
                     </div>
                 </aside>
