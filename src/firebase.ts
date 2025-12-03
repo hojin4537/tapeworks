@@ -11,6 +11,11 @@ const firebaseConfig = {
     appId: import.meta.env.VITE_FIREBASE_APP_ID
 };
 
+// Fallback for storageBucket if not explicitly set
+if (!firebaseConfig.storageBucket && firebaseConfig.projectId) {
+    firebaseConfig.storageBucket = `${firebaseConfig.projectId}.appspot.com`;
+}
+
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
